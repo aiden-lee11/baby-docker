@@ -1,8 +1,11 @@
+# docker-compose.yml
 services:
   dev:
-    image: gcc-dev
+    build: .                # build the image from the Dockerfile in this dir
+    working_dir: /workspace # matches WORKDIR in Dockerfile
     volumes:
-      - .:/workspace
-    working_dir: /workspace
-    tty: true
-    stdin_open: true
+      - .:/workspace        # mount your project into the container
+    cap_add:
+      - SYS_ADMIN           # needed for CLONE_NEWPID at runtime
+    stdin_open: true        # let you interact (equiv. to -i)
+    tty: true               # keep the TTY (equiv. to -t)
