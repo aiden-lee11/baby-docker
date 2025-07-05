@@ -14,12 +14,21 @@
 const size_t STACK_SIZE = 1024 * 1024;
 
 int child_proc(void *args){ 
-	std::cout << "hello from inner clone proc\n" << " with pid " << getpid() << "\n";
+	char* filename = (char*)args;
+	char* argv[] = {filename, nullptr};
+
+	int exec_ret = execv(filename, argv);
+	if (exec_ret == -1) {
+		std::cerr << "execv() failed (" << errno << "): "
+			<< std::strerror(errno) << '\n';
+		return -1;
+	}
+
 	return 0;
 }
 
 
-int main() { 
+int main(int argc, char** argv) { 
 	std::cout << "hello from main proc with pid " << getpid() << "\n";
 
 	char* child_stack = new char[STACK_SIZE];
@@ -29,11 +38,16 @@ int main() {
 		return 1;
 	}
 
+	if (argc < 2) {
+		std::cout << "need command to run";
+		return -1;
+	}
+
 	pid_t pid = clone(
 		child_proc, 
 		child_stack + 1024 * 1024,
-		CLONE_NEWPID | SIGCHLD,
-		nullptr
+		CLONE_NEWPID | CLONE_NEWNS | SIGCHLD,
+		argv[1]
 	);
 
 	if (pid == -1) {
